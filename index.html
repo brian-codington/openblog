@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenBlog — Headless CMS Demo</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:         #ffffff;
+            --surface:    #f8fafc;
+            --border:     #e2e8f0;
+            --text:       #0f172a;
+            --text-muted: #64748b;
+            --accent:     #6366f1;
+            --accent2:    #8b5cf6;
+            --green:      #22c55e;
+            --code-bg:    #0f172a;
+            --code-text:  #e2e8f0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        /* ── Header ── */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            height: 60px;
+            gap: 16px;
+        }
+        .logo {
+            font-size: 1.2em;
+            font-weight: 700;
+            font-family: system-ui, sans-serif;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .logo span { color: var(--accent); }
+        .demo-badge {
+            background: #6366f115;
+            border: 1px solid #6366f140;
+            color: var(--accent);
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-family: system-ui, sans-serif;
+        }
+        .header-nav {
+            margin-left: auto;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .header-nav a {
+            font-family: system-ui, sans-serif;
+            font-size: 0.88em;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color .15s;
+        }
+        .header-nav a:hover, .header-nav a.active { color: var(--text); }
+        .btn-write {
+            background: var(--accent);
+            color: #fff !important;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.82em !important;
+            font-family: system-ui, sans-serif;
+        }
+        .btn-write:hover { opacity: .9; }
+
+        /* ── Views ── */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* ── Blog list ── */
+        .blog-container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .blog-hero { margin-bottom: 48px; }
+        .blog-hero h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-family: system-ui, sans-serif;
+        }
+        .blog-hero p { color: var(--text-muted); font-family: system-ui, sans-serif; }
+
+        .post-list { display: flex; flex-direction: column; gap: 40px; }
+
+        .post-card { border-bottom: 1px solid var(--border); padding-bottom: 40px; cursor: pointer; }
+        .post-card:last-child { border-bottom: none; }
+
+        .post-tags { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+        .tag {
+            font-size: 0.72em;
+            font-family: system-ui, sans-serif;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 2px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+        .tag:hover { border-color: var(--accent); color: var(--accent); }
+
+        .post-card h2 {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-family: system-ui, sans-serif;
+            line-height: 1.3;
+            transition: color .15s;
+        }
+        .post-card:hover h2 { color: var(--accent); }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82em;
+            color: var(--text-muted);
+            font-family: system-ui, sans-serif;
+            margin-bottom: 12px;
+        }
+        .author-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65em; font-weight: 700; color: #fff;
+        }
+
+        .post-excerpt { color: var(--text-muted); font-size: 0.95em; line-height: 1.6; }
+
+        .read-more {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 0.82em;
+            font-family: system-ui, sans-serif;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* ── Post detail ── */
+        .post-container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .post-header { margin-bottom: 32px; }
+        .post-header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 16px;
+            font-family: system-ui, sans-serif;
+        }
+
+        .post-author-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+            font-family: system-ui, sans-serif;
+        }
+        .post-author-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: #fff; font-size: 0.85em;
+        }
+        .post-author-name { font-size: 0.9em; font-weight: 600; }
+        .post-author-date { font-size: 0.8em; color: var(--text-muted); }
+        .post-read-time { margin-left: auto; font-size: 0.8em; color: var(--text-muted); }
+
+        /* ── Prose styles ── */
+        .prose h2 {
+            font-size: 1.5em;
+            font-weight: 700;
+            font-family: system-ui, sans-serif;
+            margin: 36px 0 16px;
+        }
+        .prose h3 {
+            font-size: 1.2em;
+            font-weight: 600;
+            font-family: system-ui, sans-serif;
+            margin: 28px 0 12px;
+        }
+        .prose p { margin-bottom: 20px; }
+        .prose ul, .prose ol { padding-left: 24px; margin-bottom: 20px; }
+        .prose li { margin-bottom: 6px; }
+        .prose strong { font-weight: 700; }
+        .prose em { font-style: italic; }
+        .prose a { color: var(--accent); text-decoration: underline; }
+        .prose blockquote {
+            border-left: 3px solid var(--accent);
+            padding: 4px 20px;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .prose code {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85em;
+        }
+        .prose pre {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 24px 0;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .prose pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: var(--code-text);
+            font-size: 1em;
+        }
+        .kw  { color: #c792ea; }
+        .fn  { color: #82aaff; }
+        .str { color: #c3e88d; }
+        .cm  { color: #546e7a; font-style: italic; }
+        .num { color: #f78c6c; }
+        .cls { color: #ffcb6b; }
+
+        /* ── Back button ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: system-ui, sans-serif;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-bottom: 32px;
+            transition: color .15s;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .back-btn:hover { color: var(--text); }
+
+        /* ── Editor view ── */
+        .editor-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .editor-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+        }
+        .toolbar-btn {
+            padding: 4px 8px;
+            border: none;
+            background: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            color: var(--text-muted);
+            font-family: system-ui, sans-serif;
+            transition: background .1s;
+        }
+        .toolbar-btn:hover { background: var(--border); color: var(--text); }
+        .toolbar-btn.active { background: var(--accent); color: #fff; }
+        .editor-label {
+            margin-left: auto;
+            font-size: 0.72em;
+            font-family: system-ui, sans-serif;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        #editor-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 20px;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.88em;
+            line-height: 1.7;
+            resize: none;
+            background: var(--surface);
+            color: var(--text);
+            min-height: 500px;
+        }
+
+        .preview-panel {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            overflow-y: auto;
+            min-height: 500px;
+        }
+        .preview-panel h1 {
+            font-size: 1.6em;
+            font-weight: 700;
+            font-family: system-ui, sans-serif;
+            margin-bottom: 16px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 20px 32px;
+            text-align: center;
+            font-family: system-ui, sans-serif;
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-top: 40px;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .editor-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <a class="logo" onclick="showView('list')">Open<span>Blog</span></a>
+        <span class="demo-badge">LIVE DEMO</span>
+        <nav class="header-nav">
+            <a onclick="showView('list')" id="nav-blog" class="active">Blog</a>
+            <a onclick="showView('editor')" id="nav-editor">Editor</a>
+            <a class="btn-write" onclick="showView('editor')">✏️ Write</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Blog list view -->
+<div class="view active" id="view-list">
+    <div class="blog-container">
+        <div class="blog-hero">
+            <h1>Engineering Blog</h1>
+            <p>Writing on software architecture, open source, and developer tooling.</p>
+        </div>
+        <div class="post-list" id="post-list"></div>
+    </div>
+</div>
+
+<!-- Post detail view -->
+<div class="view" id="view-post">
+    <div class="post-container">
+        <button class="back-btn" onclick="showView('list')">← Back to posts</button>
+        <div id="post-content"></div>
+    </div>
+</div>
+
+<!-- Editor view -->
+<div class="view" id="view-editor">
+    <div class="editor-container">
+        <div class="editor-panel">
+            <div class="editor-toolbar">
+                <button class="toolbar-btn active" onclick="setEditorMode('markdown')">Markdown</button>
+                <button class="toolbar-btn" onclick="setEditorMode('rich')">Rich Text</button>
+                <span class="editor-label">Editor</span>
+            </div>
+            <textarea id="editor-input" spellcheck="false" oninput="updatePreview()"></textarea>
+        </div>
+        <div class="preview-panel prose" id="editor-preview">
+            <p style="color:var(--text-muted);font-family:system-ui,sans-serif;font-size:.88em">Start typing to see a live preview...</p>
+        </div>
+    </div>
+</div>
+
+<footer>
+    OpenBlog — simulated demo &nbsp;|&nbsp;
+    <a href="https://github.com/brian-codington/openblog" target="_blank">View Source on GitHub</a>
+    &nbsp;|&nbsp;
+    <a href="https://github.com/brian-codington/brian-codington-portfolio" target="_blank">Portfolio</a>
+</footer>
+
+<script>
+// ============================================================
+//  POSTS DATA
+// ============================================================
+
+const POSTS = [
+    {
+        id: 1,
+        title: "Building a High-Performance API Gateway with Node.js",
+        slug: "api-gateway-nodejs",
+        excerpt: "How I built a lightweight API gateway handling 12,000 requests per second with JWT auth, Redis rate limiting, and circuit breaking — and what I learned along the way.",
+        date: "January 28, 2024",
+        readTime: "8 min read",
+        author: { name: "Brian Codington", initials: "BC", color: "#6366f1" },
+        tags: ["Node.js", "Architecture", "Performance"],
+        content: `
+<h1>Building a High-Performance API Gateway with Node.js</h1>
+<div class="post-author-row">
+    <div class="post-author-avatar" style="background:#6366f1">BC</div>
+    <div>
+        <div class="post-author-name">Brian Codington</div>
+        <div class="post-author-date">January 28, 2024</div>
+    </div>
+    <span class="post-read-time">8 min read</span>
+</div>
+<div class="prose">
+<p>When our backend grew from a monolith into eight microservices, we quickly realized every service had its own auth logic, rate limiting, and inconsistent API contracts. Client apps were calling different endpoints with three different auth schemes. Something had to change.</p>
+
+<h2>The Problem with Direct Service Access</h2>
+<p>Imagine a mobile app needing to show a user's dashboard. It would call the user service, orders service, and notifications service — three separate requests, three separate tokens, three separate error handling paths. The complexity grows quadratically with each new service.</p>
+
+<blockquote>A centralized gateway isn't just a convenience — it's a necessity at scale.</blockquote>
+
+<h2>Architecture Overview</h2>
+<p>The gateway is built on Express with three core responsibilities: authentication, rate limiting, and proxying. Every inbound request passes through the same auth middleware before being forwarded to the appropriate upstream service.</p>
+
+<pre><code><span class="kw">const</span> <span class="fn">rateLimiter</span> = (options = {}) => {
+  <span class="kw">const</span> { windowMs = <span class="num">60000</span>, max = <span class="num">100</span> } = options;
+
+  <span class="kw">return async</span> (req, res, next) => {
+    <span class="kw">const</span> key = <span class="str">\`rl:\${req.user?.id || req.ip}\`</span>;
+    <span class="kw">const</span> current = <span class="kw">await</span> redis.<span class="fn">incr</span>(key);
+
+    <span class="kw">if</span> (current === <span class="num">1</span>) {
+      <span class="kw">await</span> redis.<span class="fn">expire</span>(key, windowMs / <span class="num">1000</span>);
+    }
+
+    <span class="kw">if</span> (current > max) {
+      <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">429</span>).<span class="fn">json</span>({ error: <span class="str">'Too Many Requests'</span> });
+    }
+
+    <span class="fn">next</span>();
+  };
+};</code></pre>
+
+<h2>Circuit Breaking</h2>
+<p>The most important reliability feature is the circuit breaker. When an upstream service starts failing, the breaker opens and immediately returns 503 responses instead of letting requests pile up and cascade through the system.</p>
+<p>After 30 seconds, it moves to a half-open state and lets a single request through to test recovery. If that succeeds, the circuit closes again. This pattern alone cut our incident response time significantly.</p>
+
+<h2>Results</h2>
+<p>After deploying the gateway, our mobile app's startup time dropped by 40% — one request instead of three. Client-side complexity dropped dramatically, and we finally had a single place to add observability, logging, and security controls.</p>
+<p>The gateway now handles 12,000 requests per second with less than 3ms overhead per request. Not bad for a weekend project that became production infrastructure.</p>
+</div>`
+    },
+    {
+        id: 2,
+        title: "Why I Built an Open Source Charting Library",
+        slug: "why-dataviz-engine",
+        excerpt: "Every existing React charting library made me compromise somewhere — on accessibility, on bundle size, or on D3 access. So I built dataviz-engine to stop compromising.",
+        date: "December 14, 2023",
+        readTime: "5 min read",
+        author: { name: "Brian Codington", initials: "BC", color: "#6366f1" },
+        tags: ["Open Source", "React", "D3.js"],
+        content: `
+<h1>Why I Built an Open Source Charting Library</h1>
+<div class="post-author-row">
+    <div class="post-author-avatar" style="background:#6366f1">BC</div>
+    <div>
+        <div class="post-author-name">Brian Codington</div>
+        <div class="post-author-date">December 14, 2023</div>
+    </div>
+    <span class="post-read-time">5 min read</span>
+</div>
+<div class="prose">
+<p>I've used every major React charting library. Recharts is easy but inflexible. Victory is composable but slow. Nivo is beautiful but massive. Chart.js wraps are convenient but opaque. And raw D3 in React is a pain to manage.</p>
+
+<h2>The Core Problem</h2>
+<p>Every library made me choose between developer experience and control. If I wanted to customize the tooltip, I had to fight the library. If I wanted proper ARIA labels for accessibility, I'd find the docs silent on the topic. If I wanted the bundle to stay small, I'd have to give up features.</p>
+
+<blockquote>The best abstraction is one you don't notice until you need to break through it — and then it lets you.</blockquote>
+
+<h2>The dataviz-engine Approach</h2>
+<p>The core idea is simple: be a thin, typed layer over D3 that handles the React integration patterns, and stay out of the way everywhere else. Pass your data in. Get a responsive, accessible SVG out. When you need something custom, the D3 primitives are right there.</p>
+
+<pre><code><span class="kw">import</span> { <span class="cls">LineChart</span> } <span class="kw">from</span> <span class="str">'dataviz-engine'</span>;
+
+<span class="kw">const</span> <span class="fn">Chart</span> = () => (
+  &lt;<span class="cls">LineChart</span>
+    data={data}
+    xKey=<span class="str">"month"</span>
+    yKey=<span class="str">"revenue"</span>
+    accessible
+    ariaLabel=<span class="str">"Monthly revenue 2024"</span>
+  /&gt;
+);</code></pre>
+
+<h2>500 Stars Later</h2>
+<p>The library hit 500 GitHub stars faster than I expected. The feedback that matters most: developers tell me it's the first charting library where they could implement WCAG 2.1 AA accessibility without monkey-patching the internals.</p>
+<p>That was the goal. Mission accomplished — for now.</p>
+</div>`
+    },
+    {
+        id: 3,
+        title: "Real-Time Collaboration at Scale with WebSockets and Redis",
+        slug: "realtime-websockets-redis",
+        excerpt: "TaskFlow needed sub-20ms latency for live task updates across 15,000 daily users. Here's the WebSocket architecture that made it possible.",
+        date: "November 3, 2023",
+        readTime: "10 min read",
+        author: { name: "Brian Codington", initials: "BC", color: "#6366f1" },
+        tags: ["WebSockets", "Redis", "Architecture"],
+        content: `
+<h1>Real-Time Collaboration at Scale with WebSockets and Redis</h1>
+<div class="post-author-row">
+    <div class="post-author-avatar" style="background:#6366f1">BC</div>
+    <div>
+        <div class="post-author-name">Brian Codington</div>
+        <div class="post-author-date">November 3, 2023</div>
+    </div>
+    <span class="post-read-time">10 min read</span>
+</div>
+<div class="prose">
+<p>When we added real-time collaboration to TaskFlow, the first question was simple: how do you tell every user in a project that someone just moved a task to Done — in under 20 milliseconds, reliably, at scale?</p>
+
+<h2>The Architecture</h2>
+<p>The answer is Socket.io on the server side with Redis pub/sub as the message broker. When a task update comes in over a WebSocket connection, the server persists it to PostgreSQL, then publishes the change to a Redis channel. Every server instance subscribed to that channel forwards the update to all connected clients in that project room.</p>
+
+<pre><code><span class="cm">// Server-side task update handler</span>
+socket.<span class="fn">on</span>(<span class="str">'task:update'</span>, <span class="kw">async</span> ({ taskId, changes, projectId }) => {
+  <span class="kw">const</span> hasAccess = <span class="kw">await</span> <span class="fn">checkProjectAccess</span>(socket.userId, projectId);
+  <span class="kw">if</span> (!hasAccess) <span class="kw">return</span> socket.<span class="fn">emit</span>(<span class="str">'error'</span>, { message: <span class="str">'Access denied'</span> });
+
+  <span class="kw">const</span> updated = <span class="kw">await</span> Task.<span class="fn">update</span>(taskId, changes);
+
+  io.<span class="fn">to</span>(<span class="str">\`project:\${projectId}\`</span>).<span class="fn">emit</span>(<span class="str">'task:updated'</span>, {
+    taskId,
+    changes: updated,
+    updatedBy: socket.userId,
+    timestamp: <span class="kw">new</span> <span class="cls">Date</span>().<span class="fn">toISOString</span>()
+  });
+});</code></pre>
+
+<h2>Handling Disconnections Gracefully</h2>
+<p>The trickiest part isn't the happy path — it's reconnection. When a user's connection drops and reconnects, they may have missed several updates. We solve this by storing a sequence number on every event and replaying missed events on reconnect using a small Redis sorted set per project room.</p>
+
+<h2>Numbers</h2>
+<p>In production with 15,000 daily active users, we see sustained WebSocket latency under 20ms at the 99th percentile. Redis pub/sub handles the fan-out with ease — we've never come close to its throughput limits at our scale.</p>
+<p>The lesson: for real-time collaboration, the architecture matters far more than the language or framework. Get the data flow right, and the rest follows.</p>
+</div>`
+    },
+    {
+        id: 4,
+        title: "Headless CMS Architecture: Why I Self-Host Everything",
+        slug: "headless-cms-self-host",
+        excerpt: "After paying $300/month for a hosted CMS that didn't do what I needed, I spent a weekend building OpenBlog. Here's what I learned about headless CMS architecture.",
+        date: "October 9, 2023",
+        readTime: "6 min read",
+        author: { name: "Brian Codington", initials: "BC", color: "#6366f1" },
+        tags: ["CMS", "FastAPI", "Next.js"],
+        content: `
+<h1>Headless CMS Architecture: Why I Self-Host Everything</h1>
+<div class="post-author-row">
+    <div class="post-author-avatar" style="background:#6366f1">BC</div>
+    <div>
+        <div class="post-author-name">Brian Codington</div>
+        <div class="post-author-date">October 9, 2023</div>
+    </div>
+    <span class="post-read-time">6 min read</span>
+</div>
+<div class="prose">
+<p>The hosted CMS market is full of products that are either too simple or too expensive. After my third migration away from a platform that changed its pricing model, I decided to build my own.</p>
+
+<h2>The Stack</h2>
+<p>OpenBlog runs on FastAPI for the content API and Next.js for the frontend. FastAPI was the right call for the backend: async by default, automatic OpenAPI docs, and Pydantic for schema validation. The resulting API is clean enough that I could swap the frontend for anything — a mobile app, a CLI, a different framework.</p>
+
+<pre><code><span class="kw">@router</span>.<span class="fn">get</span>(<span class="str">"/"</span>, response_model=list[<span class="cls">PostResponse</span>])
+<span class="kw">async def</span> <span class="fn">list_posts</span>(
+    page: <span class="cls">int</span> = <span class="cls">Query</span>(<span class="num">1</span>, ge=<span class="num">1</span>),
+    limit: <span class="cls">int</span> = <span class="cls">Query</span>(<span class="num">20</span>, ge=<span class="num">1</span>, le=<span class="num">100</span>),
+    tag: <span class="cls">Optional</span>[<span class="cls">str</span>] = <span class="kw">None</span>,
+    db: <span class="cls">AsyncSession</span> = <span class="cls">Depends</span>(get_db)
+):
+    query = <span class="fn">select</span>(<span class="cls">Post</span>).<span class="fn">where</span>(<span class="cls">Post</span>.status == <span class="str">"published"</span>)
+    <span class="kw">if</span> tag:
+        query = query.<span class="fn">join</span>(<span class="cls">Post</span>.tags).<span class="fn">where</span>(<span class="cls">Tag</span>.slug == tag)
+    result = <span class="kw">await</span> db.<span class="fn">execute</span>(query.<span class="fn">limit</span>(limit))
+    <span class="kw">return</span> result.<span class="fn">scalars</span>().<span class="fn">all</span>()</code></pre>
+
+<h2>ISR: The Secret Weapon</h2>
+<p>Next.js Incremental Static Regeneration is what makes the frontend fast without a CDN contract. Pages are statically generated at build time, served from cache, and regenerated in the background when content changes. The result: sub-80ms TTFB for every page load, regardless of database load.</p>
+
+<h2>The Cost</h2>
+<p>I run OpenBlog on a $6/month VPS. Postgres, Redis, FastAPI, and Next.js all on the same box. For a personal blog or small team, the hosted CMS model just doesn't make financial sense when the self-hosted alternative is this straightforward.</p>
+</div>`
+    }
+];
+
+// ============================================================
+//  VIEWS
+// ============================================================
+
+let currentView = 'list';
+
+function showView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+
+    document.querySelectorAll('.header-nav a').forEach(a => a.classList.remove('active'));
+    if (view === 'list' || view === 'post') document.getElementById('nav-blog').classList.add('active');
+    if (view === 'editor') document.getElementById('nav-editor').classList.add('active');
+
+    currentView = view;
+}
+
+// ============================================================
+//  POST LIST
+// ============================================================
+
+function renderPostList() {
+    const container = document.getElementById('post-list');
+    container.innerHTML = POSTS.map(post => `
+        <article class="post-card" onclick="showPost(${post.id})">
+            <div class="post-tags">
+                ${post.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            </div>
+            <h2>${post.title}</h2>
+            <div class="post-meta">
+                <div class="author-avatar" style="background:${post.author.color}">${post.author.initials}</div>
+                <span>${post.author.name}</span>
+                <span>·</span>
+                <span>${post.date}</span>
+                <span>·</span>
+                <span>${post.readTime}</span>
+            </div>
+            <p class="post-excerpt">${post.excerpt}</p>
+            <span class="read-more">Read more →</span>
+        </article>
+    `).join('');
+}
+
+function showPost(id) {
+    const post = POSTS.find(p => p.id === id);
+    if (!post) return;
+    document.getElementById('post-content').innerHTML = post.content;
+    showView('post');
+    window.scrollTo(0, 0);
+}
+
+// ============================================================
+//  EDITOR
+// ============================================================
+
+const DEFAULT_CONTENT = `# My First Post
+
+Welcome to **OpenBlog** — a headless CMS built for developers.
+
+## Features
+
+- Markdown-first editing
+- Live preview as you type
+- Syntax highlighting for code blocks
+- MDX support for React components
+
+## Code Example
+
+\`\`\`javascript
+const greeting = (name) => {
+  return \`Hello, \${name}!\`;
+};
+
+console.log(greeting('World'));
+\`\`\`
+
+## Why OpenBlog?
+
+> Self-hostable, open source, and built on a clean REST API. No vendor lock-in, no surprise pricing changes.
+
+Start writing and the preview updates instantly on the right.`;
+
+function updatePreview() {
+    const raw = document.getElementById('editor-input').value;
+    document.getElementById('editor-preview').innerHTML = parseMarkdown(raw);
+}
+
+function parseMarkdown(md) {
+    return md
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/```[\w]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^(?!<[hupb]|<li|<block)(.+)$/gm, (m) => m.startsWith('<') ? m : `<p>${m}</p>`);
+}
+
+function setEditorMode(mode) {
+    document.querySelectorAll('.editor-toolbar .toolbar-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0 && mode === 'markdown') || (i === 1 && mode === 'rich'));
+    });
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+
+renderPostList();
+document.getElementById('editor-input').value = DEFAULT_CONTENT;
+updatePreview();
+</script>
+</body>
+</html>
