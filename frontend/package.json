@@ -1,0 +1,30 @@
+{
+  "name": "openblog-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tiptap/core": "^2.2.4",
+    "@tiptap/extension-code-block-lowlight": "^2.2.4",
+    "@tiptap/react": "^2.2.4",
+    "@tiptap/starter-kit": "^2.2.4",
+    "axios": "^1.6.7",
+    "date-fns": "^3.3.1",
+    "lowlight": "^3.1.0",
+    "next": "14.1.0",
+    "next-mdx-remote": "^4.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "shiki": "^1.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
